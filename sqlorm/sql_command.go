@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/liudanking/gorm2sql/gencode"
-	"github.com/liudanking/gorm2sql/program"
+	"github.com/soopsio/gorm2sql/gencode"
+	"github.com/soopsio/gorm2sql/program"
 
 	log "github.com/liudanking/goutil/logutil"
 	"github.com/urfave/cli"
@@ -102,6 +102,7 @@ func SqlCommandAction(c *cli.Context) error {
 			log.Warning("get package [%s] failed:%v", srcPkg.ImportPath, err)
 			return err
 		}
+
 		types = program.FindMatchStruct(pi.Files, matchFunc)
 	}
 

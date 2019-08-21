@@ -3,15 +3,12 @@ package sqlorm
 import (
 	"errors"
 	"fmt"
+	log "github.com/liudanking/goutil/logutil"
+	"github.com/pinzolo/casee"
+	"github.com/soopsio/gorm2sql/util"
 	"go/ast"
 	"strconv"
 	"strings"
-
-	"github.com/liudanking/gorm2sql/util"
-
-	"github.com/pinzolo/casee"
-
-	log "github.com/liudanking/goutil/logutil"
 )
 
 type SqlGenerator struct {
@@ -51,6 +48,18 @@ func (ms *SqlGenerator) GetCreateTableSql() (string, error) {
 				log.Warning("generateSqlTag [%s] failed:%v", t.Sel.Name, err)
 			} else {
 				tags = append(tags, fmt.Sprintf("%s %s", getColumnName(field), tag))
+			}
+		case *ast.StarExpr:
+			if i, ok := t.X.(*ast.SelectorExpr); ok {
+				field.Type = i
+				tag, err := generateSqlTag(field)
+				if err != nil {
+					log.Warning("generateSqlTag [%s] failed:%v", i.Sel.Name, err)
+				} else {
+					tags = append(tags, fmt.Sprintf("%s %s", getColumnName(field), tag))
+				}
+			} else {
+				log.Warning("field %s not supported, ignore", util.GetFieldName(field))
 			}
 		default:
 			log.Warning("field %s not supported, ignore", util.GetFieldName(field))
@@ -126,7 +135,7 @@ func (ms *SqlGenerator) getStructFieds(node ast.Node) []*ast.Field {
 			} else {
 				fields = append(fields, field)
 			}
-		case *ast.SelectorExpr:
+		case *ast.SelectorExpr, *ast.StarExpr:
 			fields = append(fields, field)
 		default:
 			log.Warning("filed %s not supported, ignore", util.GetFieldName(field))
@@ -247,8 +256,9 @@ func mysqlTag(field *ast.Field, size int, autoIncrease bool) (string, error) {
 		}
 		return "longtext", nil
 	case "Time":
-		return "datetime", nil
+		return "timestamp", nil
 	default:
+		fmt.Printf("%s", typeName)
 		return "", errors.New(fmt.Sprintf("type %s not supported", typeName))
 
 	}
